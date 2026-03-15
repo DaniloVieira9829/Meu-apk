@@ -1,0 +1,48 @@
+name: Criar Meu APK
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Extrair Projeto
+        run: unzip projeto.zip
+
+      - name: Configurar Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Instalar pnpm e Dependencias
+        run: |
+          npm install -g pnpm
+          pnpm install
+          pnpm run build
+
+      - name: Criar Estrutura Android
+        run: |
+          pnpm add @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "MeuApp" "com.meu.app" --web-dir dist
+          npx cap add android
+          npx cap copy android
+
+      - name: Gerar o APK (Java)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Compilar
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Download do APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: meu-projeto-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          
